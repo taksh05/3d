@@ -1,0 +1,61 @@
+/* Layout Wrapper */
+.viewer-layout-wrapper {
+  display: flex;
+  flex-direction: column; /* Force vertical stack */
+  align-items: center;
+  width: 100%;
+  padding-bottom: 50px; /* Space for the QR to appear at the bottom */
+}
+
+/* 3D Box Styling */
+.model-container {
+  width: 100%;
+  max-width: 800px;
+  height: 450px; /* Original box size */
+  border: 1px solid #333;
+  border-radius: 15px;
+  background: #000;
+  position: relative;
+  overflow: hidden;
+}
+
+/* QR Code Container */
+.qr-container-below {
+  margin-top: 30px;
+  text-align: center;
+  padding: 20px;
+  background: #111;
+  border-radius: 20px;
+  border: 1px solid #00ffcc;
+  z-index: 50; /* Ensure it stays on top of page background */
+}
+
+.qr-card {
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+  display: inline-block;
+  box-shadow: 0 0 20px rgba(0, 255, 204, 0.4);
+}
+
+.qr-text {
+  color: #00ffcc;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+/* Green Button inside the box */
+.ar-button {
+  background: #00ffcc;
+  color: #000;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: bold;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: pointer;
+  z-index: 100;
+}

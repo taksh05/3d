@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/autoar", "destination": "/index.html" },
+    { "source": "/arview", "destination": "/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
