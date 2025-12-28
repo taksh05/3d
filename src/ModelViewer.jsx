@@ -4,7 +4,6 @@ export default function ModelViewer() {
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false);
 
   useEffect(() => {
-    // Standard check to ensure the 3D engine is ready
     if (customElements.get("model-viewer")) {
       setIsLibraryLoaded(true);
       return;
@@ -16,33 +15,38 @@ export default function ModelViewer() {
 
   return (
     <div style={containerStyle}>
-      {/* PROGRESS BAR REMOVED: 
-          The 9MB model will now load directly without the loading line.
-      */}
       <model-viewer
         src="/models/model.glb"
         ios-src="/models/model.usdz"
         
-        /* AXIS LOCKING: Side-view only, no top or bottom viewing */
-        camera-orbit="0deg 90deg 2.5m"
+        /* 1. FIX AR "STUCK" ISSUE: Enable Gestures */
+        ar
+        ar-modes="webxr quick-look scene-viewer"
+        ar-scale="auto"       // Allows pinching to resize in AR
+        ar-placement="floor"
+        
+        /* 2. LOOSEN CONTROLS FOR SMOOTHER INTERACTION */
+        camera-controls       // Enables rotation and zoom
+        enable-pan            // Fixes "stuck" feeling by allowing movement
+        interaction-prompt="auto"
+
+        /* 3. SET ZOOM LIMITS (Prevents getting stuck) */
+        min-camera-orbit="auto auto 0.5m" 
+        max-camera-orbit="auto auto 20m"
+
+        /* 4. DESKTOP VIEWING (Locked horizontally as requested) */
         min-polar-angle="90deg"
         max-polar-angle="90deg"
-        min-camera-orbit="auto 90deg auto"
-        max-camera-orbit="auto 90deg auto"
-
-        /* SLOW AUTO-ROTATE */
         auto-rotate
         rotation-per-second="2deg"
         
-        /* AR CONFIGURATION */
-        ar
-        ar-modes="webxr scene-viewer quick-look"
-        camera-controls
-        enable-pan={false}
+        /* 5. VISUAL QUALITY */
+        shadow-intensity="1.5"
+        exposure="1.1"
+        environment-image="neutral"
         
         style={viewerStyle}
       >
-        {/* AR Button: Only displays on compatible mobile devices */}
         <button slot="ar-button" style={arButtonStyle}>
           View in Your Space
         </button>
@@ -51,41 +55,17 @@ export default function ModelViewer() {
   );
 }
 
-/* --- STYLES --- */
 const containerStyle = {
-  width: "100%",
-  maxWidth: "1100px",
-  height: "520px",
-  margin: "20px auto",
-  background: "#000",
-  borderRadius: "16px",
-  position: "relative",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  overflow: "hidden",
-  border: "1px solid #222"
+  width: "100%", maxWidth: "1100px", height: "520px", margin: "20px auto",
+  background: "#000", borderRadius: "16px", position: "relative",
+  display: "flex", justifyContent: "center", alignItems: "center", overflow: "hidden"
 };
 
-const viewerStyle = { 
-  width: "100%", 
-  height: "100%", 
-  outline: "none" 
-};
+const viewerStyle = { width: "100%", height: "100%", outline: "none" };
 
 const arButtonStyle = {
-  backgroundColor: "#00ffcc",
-  color: "#000",
-  borderRadius: "30px",
-  border: "none",
-  padding: "12px 28px",
-  position: "absolute",
-  bottom: "25px",
-  left: "50%",
-  transform: "translateX(-50%)",
-  fontWeight: "bold",
-  fontSize: "14px",
-  cursor: "pointer",
-  zIndex: 10,
-  boxShadow: "0 4px 15px rgba(0, 255, 204, 0.4)"
+  backgroundColor: "#00ffcc", color: "#000", borderRadius: "30px", border: "none",
+  padding: "12px 28px", position: "absolute", bottom: "25px", left: "50%",
+  transform: "translateX(-50%)", fontWeight: "bold", fontSize: "14px",
+  cursor: "pointer", zIndex: 10, boxShadow: "0 4px 15px rgba(0, 255, 204, 0.4)"
 };
