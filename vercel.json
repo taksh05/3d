@@ -18,6 +18,10 @@
   "rewrites": [
     { "source": "/autoar", "destination": "/index.html" },
     { "source": "/arview", "destination": "/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    /* This "has" condition prevents the rewrite if the file exists or is in the models folder */
+    { 
+      "source": "/((?!models/).*)", 
+      "destination": "/index.html" 
+    }
   ]
 }
