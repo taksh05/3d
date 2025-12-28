@@ -1,87 +1,90 @@
-import React, { Suspense, useState } from "react";
+import React, { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
-import { useGLTF, OrbitControls, Stage, Center, ARButton, XR } from "@react-three/drei";
+import { OrbitControls, useGLTF, Bounds } from "@react-three/drei";
+import { XR, createXRStore } from "@react-three/xr";
 
-function DroneModel() {
+/* ---------- XR STORE ---------- */
+const xrStore = createXRStore();
+
+/* ---------- MODEL ---------- */
+function Model() {
   const { scene } = useGLTF("/models/model.glb");
+
+  // 🔧 Small scale adjustment (keeps proportions)
+  scene.scale.set(0.75, 0.75, 0.75);
+
   return <primitive object={scene} />;
 }
 
+/* ---------- DEVICE CHECK ---------- */
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+/* ---------- MAIN ---------- */
 export default function ModelViewer() {
-  const [interacting, setInteracting] = useState(false);
-
   return (
-    <div style={displayBoxStyle}>
-      {/* 1. AR BUTTON: This must be present for the 'View in AR' button to show on phones */}
-      <ARButton sessionInit={{ requiredFeatures: ['hit-test'] }} />
+    <div style={container}>
 
-      <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 0, 5], fov: 45 }}>
-        {/* 2. XR WRAPPER: Required for R3F to handle the AR session */}
-        <XR>
+      {/* ---------- AR BUTTON (MOBILE ONLY) ---------- */}
+      {isMobile && navigator.xr && (
+        <button style={arButton} onClick={() => xrStore.enterAR()}>
+          VIEW IN AR
+        </button>
+      )}
+
+      <Canvas
+        camera={{ position: [0, 0, 12], fov: 45 }} // 🔧 start further back
+        gl={{ antialias: true }}
+        onCreated={({ gl }) => (gl.xr.enabled = true)}
+      >
+        {/* 🌫 GREYISH BACKGROUND */}
+        <color attach="background" args={["#2a2a2a"]} />
+
+        {/* ⚠️ SAME BRIGHTNESS AS BEFORE */}
+        <ambientLight intensity={1} />
+
+        <XR store={xrStore}>
           <Suspense fallback={null}>
-            <Stage 
-              environment="studio" 
-              intensity={0.4} 
-              contactShadow={{ opacity: 0.6, blur: 2 }} 
-              adjustCamera={true} 
-            >
-              <Center>
-                <DroneModel />
-              </Center>
-            </Stage>
+            <Bounds fit clip observe margin={1.6}>
+              <Model />
+            </Bounds>
 
-            <OrbitControls 
-              makeDefault 
-              enableDamping={true}
-              autoRotate={!interacting} 
-              autoRotateSpeed={1.8} 
-              minPolarAngle={Math.PI / 2} 
-              maxPolarAngle={Math.PI / 2}
-              onStart={() => setInteracting(true)} 
+            <OrbitControls
+              enableDamping
+              dampingFactor={0.08}
+              rotateSpeed={0.6}
+              zoomSpeed={0.8}
+              minDistance={4}
+              maxDistance={25}   // 🔥 ALLOW MORE ZOOM OUT
             />
           </Suspense>
         </XR>
       </Canvas>
-
-      {/* 3. CLEAN OVERLAY: Removed yellow emoji, kept simple text */}
-      {!interacting && (
-        <div style={promptOverlayStyle}>
-          <div style={circleIconStyle}></div>
-          <p style={{ margin: '10px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.6)', letterSpacing: '1px' }}>
-            DRAG TO ROTATE
-          </p>
-        </div>
-      )}
     </div>
   );
 }
 
-const displayBoxStyle = {
+/* ---------- STYLES ---------- */
+
+const container = {
   width: "100%",
-  height: "500px",
-  background: "radial-gradient(circle, #1a1a1a 0%, #000 100%)",
-  borderRadius: "24px",
-  border: "1px solid #333",
-  overflow: "hidden",
+  height: "88vh",
+  background:
+    "radial-gradient(circle at center, #3a3a3a 0%, #1b1b1b 70%)",
   position: "relative",
-  cursor: "grab"
 };
 
-const promptOverlayStyle = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  textAlign: 'center',
-  pointerEvents: 'none',
-  opacity: 0.8
-};
-
-const circleIconStyle = {
-  width: '40px',
-  height: '40px',
-  borderRadius: '50%',
-  border: '2px solid rgba(255,255,255,0.4)',
-  margin: '0 auto',
-  backgroundColor: 'rgba(255,255,255,0.1)'
+const arButton = {
+  position: "absolute",
+  bottom: "24px",
+  left: "50%",
+  transform: "translateX(-50%)",
+  zIndex: 10,
+  padding: "14px 30px",
+  background: "#00ffcc",
+  color: "#000",
+  border: "none",
+  borderRadius: "32px",
+  fontWeight: "bold",
+  fontSize: "14px",
+  cursor: "pointer",
 };
