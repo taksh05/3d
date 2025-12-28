@@ -4,11 +4,11 @@ export default function ModelViewer() {
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false);
 
   useEffect(() => {
+    // Component already registered globally in main.jsx, 
+    // but we check for library state to ensure smooth UI
     if (customElements.get("model-viewer")) {
       setIsLibraryLoaded(true);
-      return;
     }
-    import("@google/model-viewer").then(() => setIsLibraryLoaded(true));
   }, []);
 
   if (!isLibraryLoaded) return null;
@@ -19,29 +19,29 @@ export default function ModelViewer() {
         src="/models/model.glb"
         ios-src="/models/model.usdz"
         
-        /* FIX THE ZOOM: Set distance to 'auto' to fit model size */
+        /* FIX ZOOM: 'auto' frames the drone perfectly regardless of its size */
         camera-orbit="0deg 90deg auto" 
         camera-controls
         enable-pan
         
-        /* LOCK ROTATION: Forces side-view only on web */
+        /* LOCK ROTATION: Strict horizontal view for web users */
         min-polar-angle="90deg"
         max-polar-angle="90deg"
-        /* Important: Constraints must match for the orbit distance to be 'auto' */
         min-camera-orbit="auto 90deg auto"
         max-camera-orbit="auto 90deg auto"
 
-        /* AR SETTINGS: Use native viewers for best stability */
+        /* AR CONFIG: Pinned to floor, auto-scaling allowed */
         ar
-        ar-modes="quick-look scene-viewer webxr"
+        ar-modes="scene-viewer quick-look webxr" // Prioritize Scene Viewer for Android stability
         ar-placement="floor"
-        ar-scale="auto" // Allows pinch-to-zoom in AR mode
+        ar-scale="auto" 
         
-        /* VISUALS */
+        /* VISUALS & PERFORMANCE */
         shadow-intensity="2"
         environment-image="neutral"
         exposure="1.2"
         loading="eager"
+        reveal="auto"
         
         style={viewerStyle}
       >
