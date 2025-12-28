@@ -3,25 +3,42 @@
     {
       "source": "/models/(.*).usdz",
       "headers": [
-        { "key": "Content-Type", "value": "model/vnd.usdz+zip" },
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Content-Type",
+          "value": "model/vnd.usdz+zip"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     },
     {
       "source": "/models/(.*).glb",
       "headers": [
-        { "key": "Content-Type", "value": "model/gltf-binary" },
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        {
+          "key": "Content-Type",
+          "value": "model/gltf-binary"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
       ]
     }
   ],
   "rewrites": [
-    { "source": "/autoar", "destination": "/index.html" },
-    { "source": "/arview", "destination": "/index.html" },
-    /* This "has" condition prevents the rewrite if the file exists or is in the models folder */
-    { 
-      "source": "/((?!models/).*)", 
-      "destination": "/index.html" 
+    {
+      "source": "/autoar",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/arview",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!models|assets|favicon).*)",
+      "destination": "/index.html"
     }
   ]
 }
