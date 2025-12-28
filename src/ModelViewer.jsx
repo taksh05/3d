@@ -1,69 +1,65 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 
-export default function ModelViewer() {
-  const [isLibraryLoaded, setIsLibraryLoaded] = useState(false);
+export default function NativeARViewer() {
+  // Replace these with your actual Vercel URLs
+  const glbUrl = "https://your-site.vercel.app/models/model.glb";
+  const usdzUrl = "https://your-site.vercel.app/models/model.usdz";
+  const posterUrl = "/drone-preview.jpg"; // A static image of the drone
 
-  useEffect(() => {
-    // Component already registered globally in main.jsx, 
-    // but we check for library state to ensure smooth UI
-    if (customElements.get("model-viewer")) {
-      setIsLibraryLoaded(true);
-    }
-  }, []);
-
-  if (!isLibraryLoaded) return null;
+  // Google Scene Viewer Intent (Android)
+  const androidIntent = `intent://arvr.google.com/scene-viewer/1.0?file=${glbUrl}&mode=ar_only#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=https://developers.google.com/ar;end;`;
 
   return (
     <div style={containerStyle}>
-      <model-viewer
-        src="/models/model.glb"
-        ios-src="/models/model.usdz"
-        
-        /* FIX ZOOM: 'auto' frames the drone perfectly regardless of its size */
-        camera-orbit="0deg 90deg auto" 
-        camera-controls
-        enable-pan
-        
-        /* LOCK ROTATION: Strict horizontal view for web users */
-        min-polar-angle="90deg"
-        max-polar-angle="90deg"
-        min-camera-orbit="auto 90deg auto"
-        max-camera-orbit="auto 90deg auto"
+      <h2 style={{ color: "#fff", textAlign: "center" }}>Drone AR Preview</h2>
+      
+      {/* Visual Preview Area */}
+      <div style={previewBox}>
+        <img src={posterUrl} alt="Drone Preview" style={imageStyle} />
+      </div>
 
-        /* AR CONFIG: Pinned to floor, auto-scaling allowed */
-        ar
-        ar-modes="scene-viewer quick-look webxr" // Prioritize Scene Viewer for Android stability
-        ar-placement="floor"
-        ar-scale="auto" 
-        
-        /* VISUALS & PERFORMANCE */
-        shadow-intensity="2"
-        environment-image="neutral"
-        exposure="1.2"
-        loading="eager"
-        reveal="auto"
-        
-        style={viewerStyle}
-      >
-        <button slot="ar-button" style={arButtonStyle}>
-          View in Your Space
-        </button>
-      </model-viewer>
+      <div style={buttonContainer}>
+        {/* iOS Button (AR Quick Look) */}
+        <a rel="ar" href={usdzUrl} style={buttonLink}>
+          <img src="/ar-icon.png" style={{width: '20px', marginRight: '10px'}} alt="" />
+          View AR on iPhone
+        </a>
+
+        {/* Android Button (Google Scene Viewer) */}
+        <a href={androidIntent} style={buttonLinkAndroid}>
+          View AR on Android
+        </a>
+      </div>
+
+      <p style={noteStyle}>
+        Note: If it says "Zero KB" on iPhone, ensure Vercel LFS is enabled and redeployed.
+      </p>
     </div>
   );
 }
 
 const containerStyle = {
-  width: "100%", maxWidth: "1100px", height: "520px", margin: "20px auto",
-  background: "#000", borderRadius: "16px", position: "relative",
-  display: "flex", justifyContent: "center", alignItems: "center", overflow: "hidden"
+  display: "flex", flexDirection: "column", alignItems: "center",
+  background: "#111", padding: "40px 20px", borderRadius: "20px"
 };
 
-const viewerStyle = { width: "100%", height: "100%", outline: "none" };
-
-const arButtonStyle = {
-  backgroundColor: "#00ffcc", color: "#000", borderRadius: "30px", border: "none",
-  padding: "12px 28px", position: "absolute", bottom: "25px", left: "50%",
-  transform: "translateX(-50%)", fontWeight: "bold", fontSize: "14px",
-  cursor: "pointer", zIndex: 10, boxShadow: "0 4px 15px rgba(0, 255, 204, 0.4)"
+const previewBox = {
+  width: "100%", maxWidth: "500px", height: "300px", 
+  background: "#000", borderRadius: "15px", overflow: "hidden", marginBottom: "30px"
 };
+
+const imageStyle = { width: "100%", height: "100%", objectFit: "cover" };
+
+const buttonContainer = { display: "flex", gap: "15px", flexWrap: "wrap", justifyContent: "center" };
+
+const buttonLink = {
+  display: "flex", alignItems: "center", padding: "15px 25px",
+  backgroundColor: "#fff", color: "#000", borderRadius: "50px",
+  textDecoration: "none", fontWeight: "bold", fontSize: "16px"
+};
+
+const buttonLinkAndroid = {
+  ...buttonLink, backgroundColor: "#00ffcc", color: "#000"
+};
+
+const noteStyle = { color: "#666", fontSize: "12px", marginTop: "20px" };
