@@ -1,77 +1,104 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, useGLTF, Bounds } from "@react-three/drei";
-import { XR, createXRStore } from "@react-three/xr";
+import { useGLTF, Bounds } from "@react-three/drei";
+import { XR, createXRStore, HitTest, useXR } from "@react-three/xr";
+import * as THREE from "three";
 
-/* ---------- XR STORE ---------- */
 const xrStore = createXRStore();
 
 /* ---------- MODEL ---------- */
-function Model() {
+function ARModel() {
   const { scene } = useGLTF("/models/model.glb");
+  const ref = useRef();
 
-  // 🔧 Small scale adjustment (keeps proportions)
-  scene.scale.set(0.75, 0.75, 0.75);
-
-  return <primitive object={scene} />;
+  return <primitive ref={ref} object={scene} scale={0.5} />;
 }
 
-/* ---------- DEVICE CHECK ---------- */
-const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+/* ---------- AR CONTENT ---------- */
+function ARScene() {
+  const [placed, setPlaced] = useState(false);
+  const modelRef = useRef();
+  const { isPresenting } = useXR();
+
+  /* ---------- TAP TO PLACE ---------- */
+  const onSelect = (hit) => {
+    if (!placed && modelRef.current) {
+      hit.matrix.decompose(
+        modelRef.current.position,
+        modelRef.current.quaternion,
+        modelRef.current.scale
+      );
+      setPlaced(true);
+    }
+  };
+
+  /* ---------- PINCH & ROTATE ---------- */
+  const onTouchMove = (e) => {
+    if (!placed || !modelRef.current) return;
+
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].pageX - e.touches[1].pageX;
+      const dy = e.touches[0].pageY - e.touches[1].pageY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      modelRef.current.scale.setScalar(
+        THREE.MathUtils.clamp(distance / 200, 0.2, 2)
+      );
+
+      modelRef.current.rotation.y += dx * 0.005;
+    }
+  };
+
+  return (
+    <>
+      {!placed && (
+        <HitTest onSelect={onSelect}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[0.07, 0.09, 32]} />
+            <meshBasicMaterial color="white" />
+          </mesh>
+        </HitTest>
+      )}
+
+      <group ref={modelRef} onTouchMove={onTouchMove}>
+        <Bounds fit observe margin={1.5}>
+          <ARModel />
+        </Bounds>
+      </group>
+    </>
+  );
+}
 
 /* ---------- MAIN ---------- */
 export default function ModelViewer() {
-  return (
-    <div style={container}>
+  const isMobile = /Android/i.test(navigator.userAgent);
 
-      {/* ---------- AR BUTTON (MOBILE ONLY) ---------- */}
-      {isMobile && navigator.xr && (
-        <button style={arButton} onClick={() => xrStore.enterAR()}>
+  return (
+    <div style={{ width: "100%", height: "100vh", background: "#222" }}>
+      {isMobile && (
+        <button
+          style={arButton}
+          onClick={() => xrStore.enterAR()}
+        >
           VIEW IN AR
         </button>
       )}
 
       <Canvas
-        camera={{ position: [0, 0, 12], fov: 45 }} // 🔧 start further back
         gl={{ antialias: true }}
         onCreated={({ gl }) => (gl.xr.enabled = true)}
       >
-        {/* 🌫 GREYISH BACKGROUND */}
-        <color attach="background" args={["#2a2a2a"]} />
-
-        {/* ⚠️ SAME BRIGHTNESS AS BEFORE */}
         <ambientLight intensity={1} />
 
         <XR store={xrStore}>
           <Suspense fallback={null}>
-            <Bounds fit clip observe margin={1.6}>
-              <Model />
-            </Bounds>
-
-            <OrbitControls
-              enableDamping
-              dampingFactor={0.08}
-              rotateSpeed={0.6}
-              zoomSpeed={0.8}
-              minDistance={4}
-              maxDistance={25}   // 🔥 ALLOW MORE ZOOM OUT
-            />
+            <ARScene />
           </Suspense>
         </XR>
       </Canvas>
     </div>
   );
 }
-
-/* ---------- STYLES ---------- */
-
-const container = {
-  width: "100%",
-  height: "88vh",
-  background:
-    "radial-gradient(circle at center, #3a3a3a 0%, #1b1b1b 70%)",
-  position: "relative",
-};
 
 const arButton = {
   position: "absolute",
@@ -81,10 +108,7 @@ const arButton = {
   zIndex: 10,
   padding: "14px 30px",
   background: "#00ffcc",
-  color: "#000",
   border: "none",
   borderRadius: "32px",
   fontWeight: "bold",
-  fontSize: "14px",
-  cursor: "pointer",
 };
