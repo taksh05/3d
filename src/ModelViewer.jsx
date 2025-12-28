@@ -4,65 +4,47 @@ export default function ModelViewer() {
   const [isLibraryLoaded, setIsLibraryLoaded] = useState(false);
 
   useEffect(() => {
+    // Standard check to ensure the 3D engine is ready
     if (customElements.get("model-viewer")) {
       setIsLibraryLoaded(true);
       return;
     }
-    import("@google/model-viewer")
-      .then(() => setIsLibraryLoaded(true))
-      .catch((err) => console.error("3D Engine failed to load:", err));
+    import("@google/model-viewer").then(() => setIsLibraryLoaded(true));
   }, []);
 
-  if (!isLibraryLoaded) {
-    return (
-      <div style={containerStyle}>
-        <div style={{ color: "#00ffcc" }}>Initializing 3D Engine...</div>
-      </div>
-    );
-  }
+  if (!isLibraryLoaded) return null;
 
   return (
     <div style={containerStyle}>
+      {/* PROGRESS BAR REMOVED: 
+          The 9MB model will now load directly without the loading line.
+      */}
       <model-viewer
         src="/models/model.glb"
         ios-src="/models/model.usdz"
-        alt="Centrally locked 3D model"
         
-        /* 1. HARD-LOCK VERTICAL AXIS */
-        /* This ensures the camera stays at exactly 90 degrees (eye level) */
-        camera-orbit="0deg 90deg 2.5m" 
-        min-polar-angle="90deg" 
+        /* AXIS LOCKING: Side-view only, no top or bottom viewing */
+        camera-orbit="0deg 90deg 2.5m"
+        min-polar-angle="90deg"
         max-polar-angle="90deg"
-        
-        /* 2. PREVENT VERTICAL BOUNCE DURING ZOOM */
-        /* This locks the vertical limit even when zooming in/out */
         min-camera-orbit="auto 90deg auto"
         max-camera-orbit="auto 90deg auto"
 
-        /* 3. SLOWER AUTO-ROTATE */
+        /* SLOW AUTO-ROTATE */
         auto-rotate
-        auto-rotate-delay="0"
-        rotation-per-second="3deg" // Reduced to 3deg for a very smooth, slow spin
+        rotation-per-second="2deg"
         
-        /* 4. CONTROLS */
-        camera-controls
-        enable-pan={false} // Prevents moving the model off-center
-        
-        /* 5. INTERACTION HINT */
-        interaction-prompt="auto"
-        interaction-prompt-threshold="2000"
-        interaction-prompt-style="basic"
-
-        /* AR & VISUALS */
+        /* AR CONFIGURATION */
         ar
         ar-modes="webxr scene-viewer quick-look"
-        environment-image="neutral"
-        exposure="1.1"
-        shadow-intensity="1.5"
+        camera-controls
+        enable-pan={false}
+        
         style={viewerStyle}
       >
+        {/* AR Button: Only displays on compatible mobile devices */}
         <button slot="ar-button" style={arButtonStyle}>
-          View in AR
+          View in Your Space
         </button>
       </model-viewer>
     </div>
@@ -77,18 +59,18 @@ const containerStyle = {
   margin: "20px auto",
   background: "#000",
   borderRadius: "16px",
-  overflow: "hidden",
   position: "relative",
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
+  overflow: "hidden",
   border: "1px solid #222"
 };
 
-const viewerStyle = {
-  width: "100%",
-  height: "100%",
-  outline: "none",
+const viewerStyle = { 
+  width: "100%", 
+  height: "100%", 
+  outline: "none" 
 };
 
 const arButtonStyle = {
