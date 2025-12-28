@@ -1,7 +1,7 @@
 {
   "headers": [
     {
-      "source": "/models/(.*).usdz",
+      "source": "/models/:path*",
       "headers": [
         {
           "key": "Content-Type",
@@ -12,32 +12,11 @@
           "value": "public, max-age=31536000, immutable"
         }
       ]
-    },
-    {
-      "source": "/models/(.*).glb",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "model/gltf-binary"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
     }
   ],
   "rewrites": [
     {
-      "source": "/autoar",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/arview",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/((?!models|assets|favicon).*)",
+      "source": "/((?!models/).*)",
       "destination": "/index.html"
     }
   ]
