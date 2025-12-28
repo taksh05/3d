@@ -13,20 +13,20 @@ function Model({ modelRef }) {
   return <primitive ref={modelRef} object={scene} scale={0.4} />;
 }
 
-/* ---------- AR CONTENT ---------- */
+/* ---------- AR SCENE ---------- */
 function ARScene() {
-  const { gl, camera } = useThree();
+  const { gl } = useThree();
   const { session } = useXR();
 
   const modelRef = useRef();
   const hitTestSource = useRef(null);
-  const referenceSpace = useRef(null);
+  const refSpace = useRef(null);
   const [placed, setPlaced] = useState(false);
 
   const lastDistance = useRef(null);
   const lastAngle = useRef(null);
 
-  /* ---------- SETUP HIT TEST ---------- */
+  /* ---- Setup native WebXR hit test ---- */
   useEffect(() => {
     if (!session) return;
 
@@ -37,7 +37,7 @@ function ARScene() {
     });
 
     session.requestReferenceSpace("local").then((space) => {
-      referenceSpace.current = space;
+      refSpace.current = space;
     });
 
     return () => {
@@ -46,46 +46,43 @@ function ARScene() {
     };
   }, [session]);
 
-  /* ---------- FRAME LOOP ---------- */
+  /* ---- Update placement preview ---- */
   useFrame((_, frame) => {
     if (!frame || placed || !hitTestSource.current) return;
 
     const hits = frame.getHitTestResults(hitTestSource.current);
-    if (hits.length > 0) {
-      const pose = hits[0].getPose(referenceSpace.current);
-      if (pose && modelRef.current) {
-        modelRef.current.position.set(
-          pose.transform.position.x,
-          pose.transform.position.y,
-          pose.transform.position.z
-        );
-      }
+    if (hits.length > 0 && modelRef.current) {
+      const pose = hits[0].getPose(refSpace.current);
+      modelRef.current.position.set(
+        pose.transform.position.x,
+        pose.transform.position.y,
+        pose.transform.position.z
+      );
     }
   });
 
-  /* ---------- TAP TO PLACE ---------- */
+  /* ---- Tap to place ---- */
   useEffect(() => {
     if (!gl || placed) return;
-
     const place = () => setPlaced(true);
     gl.domElement.addEventListener("click", place);
     return () => gl.domElement.removeEventListener("click", place);
   }, [gl, placed]);
 
-  /* ---------- PINCH & ROTATE ---------- */
+  /* ---- Pinch zoom + rotate ---- */
   const onTouchMove = (e) => {
-    if (!placed || !modelRef.current || e.touches.length !== 2) return;
+    if (!placed || e.touches.length !== 2) return;
 
     const dx = e.touches[0].pageX - e.touches[1].pageX;
     const dy = e.touches[0].pageY - e.touches[1].pageY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    const dist = Math.sqrt(dx * dx + dy * dy);
 
     if (lastDistance.current) {
-      const scale = distance / lastDistance.current;
+      const scale = dist / lastDistance.current;
       modelRef.current.scale.multiplyScalar(scale);
-      modelRef.current.scale.clampScalar(0.2, 2);
+      modelRef.current.scale.clampScalar(0.25, 2);
     }
-    lastDistance.current = distance;
+    lastDistance.current = dist;
 
     const angle = Math.atan2(dy, dx);
     if (lastAngle.current !== null) {
