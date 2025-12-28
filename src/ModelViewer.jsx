@@ -19,31 +19,31 @@ export default function ModelViewer() {
         src="/models/model.glb"
         ios-src="/models/model.usdz"
         
-        /* 1. FIX AR "STUCK" ISSUE: Enable Gestures */
-        ar
-        ar-modes="webxr quick-look scene-viewer"
-        ar-scale="auto"       // Allows pinching to resize in AR
-        ar-placement="floor"
-        
-        /* 2. LOOSEN CONTROLS FOR SMOOTHER INTERACTION */
-        camera-controls       // Enables rotation and zoom
-        enable-pan            // Fixes "stuck" feeling by allowing movement
-        interaction-prompt="auto"
+        /* PERFORMANCE & LOADING */
+        loading="eager"
+        reveal="auto"
 
-        /* 3. SET ZOOM LIMITS (Prevents getting stuck) */
-        min-camera-orbit="auto auto 0.5m" 
-        max-camera-orbit="auto auto 20m"
-
-        /* 4. DESKTOP VIEWING (Locked horizontally as requested) */
+        /* WEB VIEW: LOCKS HORIZONTAL ROTATION ONLY */
+        camera-orbit="0deg 90deg 2.5m"
         min-polar-angle="90deg"
         max-polar-angle="90deg"
-        auto-rotate
-        rotation-per-second="2deg"
+
+        /* AR SETTINGS: ANCHOR TO FLOOR SO YOU CAN WALK AROUND IT */
+        ar
+        ar-modes="quick-look scene-viewer webxr"
+        ar-placement="floor"
+        ar-scale="auto" // Allows initial scaling if needed
         
-        /* 5. VISUAL QUALITY */
-        shadow-intensity="1.5"
-        exposure="1.1"
+        /* INTERACTION: FIXES "STUCK" FEELING */
+        camera-controls
+        enable-pan // Allows you to manually move/adjust the drone
+        min-camera-orbit="auto auto 0.5m" // Allows close zoom
+        max-camera-orbit="auto auto 20m"  // Allows far zoom
+        
+        /* VISUAL QUALITY */
+        shadow-intensity="2" // Grounded appearance in AR
         environment-image="neutral"
+        exposure="1.2"
         
         style={viewerStyle}
       >
