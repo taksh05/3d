@@ -4,32 +4,31 @@ import { OrbitControls, useGLTF } from "@react-three/drei";
 import { XR, createXRStore, useXR } from "@react-three/xr";
 import * as THREE from "three";
 
-/* ---------- XR STORE ---------- */
 const xrStore = createXRStore();
-
-/* ---------- DEVICE CHECK ---------- */
 const isAndroid = /Android/i.test(navigator.userAgent);
 
-/* ---------- MODEL ---------- */
-function Model({ modelRef }) {
+/* ---------------- MODEL ---------------- */
+function Model({ refObj }) {
   const { scene } = useGLTF("/models/model.glb");
-  return <primitive ref={modelRef} object={scene} scale={0.4} />;
+  return <primitive ref={refObj} object={scene} scale={0.4} />;
 }
 
-/* ---------- AR SCENE ---------- */
+/* ---------------- AR SCENE ---------------- */
 function ARScene() {
   const { gl } = useThree();
   const { session } = useXR();
 
   const modelRef = useRef();
   const hitTestSource = useRef(null);
-  const referenceSpace = useRef(null);
+  const refSpace = useRef(null);
+
   const [placed, setPlaced] = useState(false);
 
-  const lastDistance = useRef(null);
+  const lastDist = useRef(null);
   const lastAngle = useRef(null);
+  const lastPos = useRef(null);
 
-  /* ----- Setup native WebXR hit test ----- */
+  /* ---- HIT TEST SETUP ---- */
   useEffect(() => {
     if (!session) return;
 
@@ -40,22 +39,19 @@ function ARScene() {
     });
 
     session.requestReferenceSpace("local").then((space) => {
-      referenceSpace.current = space;
+      refSpace.current = space;
     });
 
-    return () => {
-      hitTestSource.current?.cancel();
-      hitTestSource.current = null;
-    };
+    return () => hitTestSource.current?.cancel();
   }, [session]);
 
-  /* ----- Update model position before placement ----- */
+  /* ---- PREVIEW POSITION (ONLY BEFORE PLACEMENT) ---- */
   useFrame((_, frame) => {
     if (!frame || placed || !hitTestSource.current) return;
 
     const hits = frame.getHitTestResults(hitTestSource.current);
     if (hits.length > 0 && modelRef.current) {
-      const pose = hits[0].getPose(referenceSpace.current);
+      const pose = hits[0].getPose(refSpace.current);
       modelRef.current.position.set(
         pose.transform.position.x,
         pose.transform.position.y,
@@ -64,65 +60,88 @@ function ARScene() {
     }
   });
 
-  /* ----- Tap to place model ----- */
+  /* ---- TAP TO PLACE ---- */
   useEffect(() => {
     if (!gl || placed) return;
-
     const place = () => setPlaced(true);
     gl.domElement.addEventListener("click", place);
-
     return () => gl.domElement.removeEventListener("click", place);
   }, [gl, placed]);
 
-  /* ----- Pinch zoom + rotate ----- */
+  /* ---- TOUCH CONTROLS ---- */
   const onTouchMove = (e) => {
-    if (!placed || e.touches.length !== 2) return;
+    if (!placed || !modelRef.current) return;
 
-    const dx = e.touches[0].pageX - e.touches[1].pageX;
-    const dy = e.touches[0].pageY - e.touches[1].pageY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    // MOVE (single finger)
+    if (e.touches.length === 1) {
+      if (!lastPos.current) {
+        lastPos.current = {
+          x: e.touches[0].pageX,
+          y: e.touches[0].pageY
+        };
+        return;
+      }
 
-    if (lastDistance.current) {
-      const scale = distance / lastDistance.current;
-      modelRef.current.scale.multiplyScalar(scale);
-      modelRef.current.scale.clampScalar(0.25, 2);
+      const dx = e.touches[0].pageX - lastPos.current.x;
+      const dz = e.touches[0].pageY - lastPos.current.y;
+
+      modelRef.current.position.x += dx * 0.002;
+      modelRef.current.position.z += dz * 0.002;
+
+      lastPos.current = {
+        x: e.touches[0].pageX,
+        y: e.touches[0].pageY
+      };
     }
-    lastDistance.current = distance;
 
-    const angle = Math.atan2(dy, dx);
-    if (lastAngle.current !== null) {
-      modelRef.current.rotation.y += angle - lastAngle.current;
+    // SCALE + ROTATE (two fingers)
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].pageX - e.touches[1].pageX;
+      const dy = e.touches[0].pageY - e.touches[1].pageY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (lastDist.current) {
+        const scale = dist / lastDist.current;
+        modelRef.current.scale.multiplyScalar(scale);
+        modelRef.current.scale.clampScalar(0.2, 2);
+      }
+      lastDist.current = dist;
+
+      const angle = Math.atan2(dy, dx);
+      if (lastAngle.current !== null) {
+        modelRef.current.rotation.y += angle - lastAngle.current;
+      }
+      lastAngle.current = angle;
     }
-    lastAngle.current = angle;
   };
 
   const onTouchEnd = () => {
-    lastDistance.current = null;
+    lastDist.current = null;
     lastAngle.current = null;
+    lastPos.current = null;
   };
 
   return (
     <group onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
       <Suspense fallback={null}>
-        <Model modelRef={modelRef} />
+        <Model refObj={modelRef} />
       </Suspense>
     </group>
   );
 }
 
-/* ---------- MAIN VIEWER ---------- */
+/* ---------------- MAIN VIEWER ---------------- */
 export default function ModelViewer() {
   return (
     <div style={{ width: "100%", height: "100vh", position: "relative" }}>
-      {/* AR BUTTON – ANDROID ONLY */}
       {isAndroid && (
-        <button style={arButton} onClick={() => xrStore.enterAR()}>
-          OPEN AR CAMERA
+        <button style={arBtn} onClick={() => xrStore.enterAR()}>
+          OPEN AR
         </button>
       )}
 
       <Canvas
-        camera={{ position: [0, 0, 5], fov: 45 }}
+        camera={{ position: [0, 0, 5] }}
         onCreated={({ gl }) => (gl.xr.enabled = true)}
       >
         <ambientLight intensity={1} />
@@ -142,19 +161,16 @@ export default function ModelViewer() {
   );
 }
 
-/* ---------- BUTTON STYLE ---------- */
-const arButton = {
+/* ---------------- STYLES ---------------- */
+const arBtn = {
   position: "absolute",
   bottom: "24px",
   left: "50%",
   transform: "translateX(-50%)",
   zIndex: 10,
-  padding: "14px 30px",
+  padding: "14px 28px",
   background: "#00ffcc",
-  color: "#000",
   border: "none",
-  borderRadius: "32px",
+  borderRadius: "30px",
   fontWeight: "bold",
-  fontSize: "14px",
-  cursor: "pointer",
 };
