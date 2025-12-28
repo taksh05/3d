@@ -1,99 +1,93 @@
 import React, { Suspense, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { useGLTF, Bounds } from "@react-three/drei";
-import { XR, createXRStore, HitTest, useXR } from "@react-three/xr";
+import { useGLTF } from "@react-three/drei";
+import { XR, createXRStore, HitTest } from "@react-three/xr";
 import * as THREE from "three";
 
 const xrStore = createXRStore();
 
-/* ---------- MODEL ---------- */
-function ARModel() {
+function ARModel({ rotationY }) {
   const { scene } = useGLTF("/models/model.glb");
-  const ref = useRef();
-
-  return <primitive ref={ref} object={scene} scale={0.5} />;
+  // Apply the rotation directly to the model inside the anchor
+  return <primitive object={scene} rotation={[0, rotationY, 0]} scale={0.5} />;
 }
 
-/* ---------- AR CONTENT ---------- */
 function ARScene() {
   const [placed, setPlaced] = useState(false);
-  const modelRef = useRef();
-  const { isPresenting } = useXR();
+  const [rotationY, setRotationY] = useState(0);
+  const anchorRef = useRef(); // This stays locked to the floor
+  const lastTouchX = useRef(null);
 
-  /* ---------- TAP TO PLACE ---------- */
   const onSelect = (hit) => {
-    if (!placed && modelRef.current) {
+    if (anchorRef.current) {
+      // Decompose the hit matrix into the anchor's position
+      // This "locks" the model to the physical world
       hit.matrix.decompose(
-        modelRef.current.position,
-        modelRef.current.quaternion,
-        modelRef.current.scale
+        anchorRef.current.position,
+        anchorRef.current.quaternion,
+        new THREE.Vector3() // We keep our own scale
       );
       setPlaced(true);
     }
   };
 
-  /* ---------- PINCH & ROTATE ---------- */
-  const onTouchMove = (e) => {
-    if (!placed || !modelRef.current) return;
-
-    if (e.touches.length === 2) {
-      const dx = e.touches[0].pageX - e.touches[1].pageX;
-      const dy = e.touches[0].pageY - e.touches[1].pageY;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-
-      modelRef.current.scale.setScalar(
-        THREE.MathUtils.clamp(distance / 200, 0.2, 2)
-      );
-
-      modelRef.current.rotation.y += dx * 0.005;
+  // WebXR handles touch events differently. 
+  // For simple rotation, we can track the movement delta.
+  const handlePointerMove = (e) => {
+    if (!placed) return;
+    
+    // One finger drag for 360 rotation
+    if (lastTouchX.current !== null) {
+      const deltaX = e.clientX - lastTouchX.current;
+      setRotationY((prev) => prev + deltaX * 0.01);
     }
+    lastTouchX.current = e.clientX;
+  };
+
+  const handlePointerUp = () => {
+    lastTouchX.current = null;
   };
 
   return (
     <>
+      {/* 1. THE RETICLE (Targeting) */}
       {!placed && (
         <HitTest onSelect={onSelect}>
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.07, 0.09, 32]} />
-            <meshBasicMaterial color="white" />
+            <meshBasicMaterial color="#00ffcc" />
           </mesh>
         </HitTest>
       )}
 
-      <group ref={modelRef} onTouchMove={onTouchMove}>
-        <Bounds fit observe margin={1.5}>
-          <ARModel />
-        </Bounds>
+      {/* 2. THE ANCHOR (Stability) */}
+      <group 
+        ref={anchorRef} 
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerOut={handlePointerUp}
+      >
+        {placed && (
+          <Suspense fallback={null}>
+             <ARModel rotationY={rotationY} />
+          </Suspense>
+        )}
       </group>
     </>
   );
 }
 
-/* ---------- MAIN ---------- */
 export default function ModelViewer() {
-  const isMobile = /Android/i.test(navigator.userAgent);
-
   return (
-    <div style={{ width: "100%", height: "100vh", background: "#222" }}>
-      {isMobile && (
-        <button
-          style={arButton}
-          onClick={() => xrStore.enterAR()}
-        >
-          VIEW IN AR
-        </button>
-      )}
+    <div style={{ width: "100%", height: "100vh", background: "#111" }}>
+      <button style={arButton} onClick={() => xrStore.enterAR()}>
+        START AR
+      </button>
 
-      <Canvas
-        gl={{ antialias: true }}
-        onCreated={({ gl }) => (gl.xr.enabled = true)}
-      >
-        <ambientLight intensity={1} />
-
+      <Canvas gl={{ antialias: true, alpha: true }}>
+        <ambientLight intensity={1.5} />
         <XR store={xrStore}>
-          <Suspense fallback={null}>
-            <ARScene />
-          </Suspense>
+          <ARScene />
         </XR>
       </Canvas>
     </div>
@@ -105,10 +99,11 @@ const arButton = {
   bottom: "24px",
   left: "50%",
   transform: "translateX(-50%)",
-  zIndex: 10,
-  padding: "14px 30px",
+  zIndex: 100,
+  padding: "16px 32px",
   background: "#00ffcc",
+  borderRadius: "50px",
   border: "none",
-  borderRadius: "32px",
   fontWeight: "bold",
+  cursor: "pointer"
 };
