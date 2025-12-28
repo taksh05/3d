@@ -19,26 +19,32 @@ export default function ModelViewer() {
         src="/models/model.glb"
         ios-src="/models/model.usdz"
         
-        /* FIX THE ZOOM: Let the model fit the screen automatically */
-        camera-orbit="0deg 90deg auto" 
-        camera-controls
-        enable-pan
-        
-        /* LOCK ROTATION: Left-to-Right only on Web */
+        /* FIX LOADING SPEED: Start downloading immediately */
+        loading="eager"
+        reveal="auto"
+
+        /* FIX MOBILE ROTATION: Strict Left-to-Right Only */
+        /* This prevents seeing the top/bottom on mobile browsers */
+        camera-orbit="0deg 90deg 2.5m"
         min-polar-angle="90deg"
         max-polar-angle="90deg"
+        min-camera-orbit="auto 90deg auto"
+        max-camera-orbit="auto 90deg auto"
 
         /* AR SETTINGS: Fixed to floor so you can walk toward it */
         ar
-        ar-modes="quick-look scene-viewer webxr"
-        ar-placement="floor"
-        ar-scale="auto" 
+        ar-modes="quick-look scene-viewer webxr" // Priority to native players for stability
+        ar-placement="floor" // Anchors drone to ground
+        ar-scale="auto"     // Allows you to set initial size
         
-        /* VISUALS */
-        shadow-intensity="2"
+        /* MOVEMENT CONTROLS */
+        camera-controls
+        enable-pan         // Lets you move drone in 3D view
+        
+        /* VISUAL QUALITY */
+        shadow-intensity="2" // Makes it look grounded in AR
         environment-image="neutral"
         exposure="1.2"
-        loading="eager"
         
         style={viewerStyle}
       >
@@ -62,5 +68,5 @@ const arButtonStyle = {
   backgroundColor: "#00ffcc", color: "#000", borderRadius: "30px", border: "none",
   padding: "12px 28px", position: "absolute", bottom: "25px", left: "50%",
   transform: "translateX(-50%)", fontWeight: "bold", fontSize: "14px",
-  cursor: "pointer", zIndex: 10
+  cursor: "pointer", zIndex: 10, boxShadow: "0 4px 15px rgba(0, 255, 204, 0.4)"
 };
