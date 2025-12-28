@@ -3,6 +3,9 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
 
+/* ✅ REGISTER model-viewer ONCE, GLOBALLY */
+import "@google/model-viewer/dist/model-viewer.min.js";
+
 import Hola from "./Hola.jsx";
 import ARView from "./pages/ARView.jsx";
 import AutoAR from "./pages/AutoAR.jsx";
