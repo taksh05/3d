@@ -1,7 +1,7 @@
 {
   "headers": [
     {
-      "source": "/models/(.*)",
+      "source": "/models/:path*",
       "headers": [
         { "key": "Content-Type", "value": "model/vnd.usdz+zip" },
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
@@ -9,8 +9,6 @@
     }
   ],
   "rewrites": [
-    { "source": "/autoar", "destination": "/index.html" },
-    { "source": "/arview", "destination": "/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!models|assets).*)", "destination": "/index.html" }
   ]
 }
