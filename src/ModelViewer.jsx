@@ -19,32 +19,29 @@ export default function ModelViewer() {
         src="/models/model.glb"
         ios-src="/models/model.usdz"
         
-        /* FIX LOADING SPEED: Start downloading immediately */
-        loading="eager"
-        reveal="auto"
-
-        /* FIX MOBILE ROTATION: Strict Left-to-Right Only */
-        /* This prevents seeing the top/bottom on mobile browsers */
-        camera-orbit="0deg 90deg 2.5m"
+        /* FIX THE ZOOM: Set distance to 'auto' to fit model size */
+        camera-orbit="0deg 90deg auto" 
+        camera-controls
+        enable-pan
+        
+        /* LOCK ROTATION: Forces side-view only on web */
         min-polar-angle="90deg"
         max-polar-angle="90deg"
+        /* Important: Constraints must match for the orbit distance to be 'auto' */
         min-camera-orbit="auto 90deg auto"
         max-camera-orbit="auto 90deg auto"
 
-        /* AR SETTINGS: Fixed to floor so you can walk toward it */
+        /* AR SETTINGS: Use native viewers for best stability */
         ar
-        ar-modes="quick-look scene-viewer webxr" // Priority to native players for stability
-        ar-placement="floor" // Anchors drone to ground
-        ar-scale="auto"     // Allows you to set initial size
+        ar-modes="quick-look scene-viewer webxr"
+        ar-placement="floor"
+        ar-scale="auto" // Allows pinch-to-zoom in AR mode
         
-        /* MOVEMENT CONTROLS */
-        camera-controls
-        enable-pan         // Lets you move drone in 3D view
-        
-        /* VISUAL QUALITY */
-        shadow-intensity="2" // Makes it look grounded in AR
+        /* VISUALS */
+        shadow-intensity="2"
         environment-image="neutral"
         exposure="1.2"
+        loading="eager"
         
         style={viewerStyle}
       >
