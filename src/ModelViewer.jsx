@@ -1,111 +1,153 @@
-import React, { Suspense, useRef, useState } from "react";
-import { Canvas } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
-import { XR, createXRStore, useHitTest, Interactive } from "@react-three/xr";
+import React, { Suspense, useEffect, useRef, useState } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls, useGLTF } from "@react-three/drei";
+import { XR, createXRStore, useXR } from "@react-three/xr";
 import * as THREE from "three";
 
 const xrStore = createXRStore();
+const isAndroid = /Android/i.test(navigator.userAgent);
 
-/* ---------- MODEL COMPONENT ---------- */
-function ARModel({ rotationY }) {
+/* ---------- MODEL ---------- */
+function Model({ modelRef }) {
   const { scene } = useGLTF("/models/model.glb");
-  // Applying rotation to the model inside the stable anchor
-  return <primitive object={scene} rotation={[0, rotationY, 0]} scale={0.5} />;
+  return <primitive ref={modelRef} object={scene} scale={0.4} />;
 }
 
-/* ---------- AR SCENE LOGIC ---------- */
+/* ---------- AR CONTENT ---------- */
 function ARScene() {
-  const [placed, setPlaced] = useState(false);
-  const [rotationY, setRotationY] = useState(0);
-  const anchorRef = useRef();   // The stable point on the floor
-  const reticleRef = useRef();  // The targeting ring
-  const lastTouchX = useRef(null);
+  const { gl, camera } = useThree();
+  const { session } = useXR();
 
-  // This hook runs every frame in AR to position the reticle on the floor
-  useHitTest((hitMatrix) => {
-    if (!placed && reticleRef.current) {
-      hitMatrix.decompose(
-        reticleRef.current.position,
-        reticleRef.current.quaternion,
-        reticleRef.current.scale
-      );
+  const modelRef = useRef();
+  const hitTestSource = useRef(null);
+  const referenceSpace = useRef(null);
+  const [placed, setPlaced] = useState(false);
+
+  const lastDistance = useRef(null);
+  const lastAngle = useRef(null);
+
+  /* ---------- SETUP HIT TEST ---------- */
+  useEffect(() => {
+    if (!session) return;
+
+    session.requestReferenceSpace("viewer").then((space) => {
+      session.requestHitTestSource({ space }).then((source) => {
+        hitTestSource.current = source;
+      });
+    });
+
+    session.requestReferenceSpace("local").then((space) => {
+      referenceSpace.current = space;
+    });
+
+    return () => {
+      hitTestSource.current?.cancel();
+      hitTestSource.current = null;
+    };
+  }, [session]);
+
+  /* ---------- FRAME LOOP ---------- */
+  useFrame((_, frame) => {
+    if (!frame || placed || !hitTestSource.current) return;
+
+    const hits = frame.getHitTestResults(hitTestSource.current);
+    if (hits.length > 0) {
+      const pose = hits[0].getPose(referenceSpace.current);
+      if (pose && modelRef.current) {
+        modelRef.current.position.set(
+          pose.transform.position.x,
+          pose.transform.position.y,
+          pose.transform.position.z
+        );
+      }
     }
   });
 
-  const handleSelect = () => {
-    if (!placed && reticleRef.current) {
-      // Copy the reticle's position to our anchor to "lock" it in the real world
-      anchorRef.current.position.copy(reticleRef.current.position);
-      anchorRef.current.quaternion.copy(reticleRef.current.quaternion);
-      setPlaced(true);
+  /* ---------- TAP TO PLACE ---------- */
+  useEffect(() => {
+    if (!gl || placed) return;
+
+    const place = () => setPlaced(true);
+    gl.domElement.addEventListener("click", place);
+    return () => gl.domElement.removeEventListener("click", place);
+  }, [gl, placed]);
+
+  /* ---------- PINCH & ROTATE ---------- */
+  const onTouchMove = (e) => {
+    if (!placed || !modelRef.current || e.touches.length !== 2) return;
+
+    const dx = e.touches[0].pageX - e.touches[1].pageX;
+    const dy = e.touches[0].pageY - e.touches[1].pageY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (lastDistance.current) {
+      const scale = distance / lastDistance.current;
+      modelRef.current.scale.multiplyScalar(scale);
+      modelRef.current.scale.clampScalar(0.2, 2);
     }
+    lastDistance.current = distance;
+
+    const angle = Math.atan2(dy, dx);
+    if (lastAngle.current !== null) {
+      modelRef.current.rotation.y += angle - lastAngle.current;
+    }
+    lastAngle.current = angle;
   };
 
-  const handlePointerMove = (e) => {
-    if (!placed) return;
-    // Calculation for 360 rotation based on finger swipe
-    if (lastTouchX.current !== null) {
-      const deltaX = e.clientX - lastTouchX.current;
-      setRotationY((prev) => prev + deltaX * 0.01);
-    }
-    lastTouchX.current = e.clientX;
+  const onTouchEnd = () => {
+    lastDistance.current = null;
+    lastAngle.current = null;
   };
 
   return (
-    <>
-      <ambientLight intensity={1.5} />
-
-      {/* 1. THE TARGETING RETICLE */}
-      {!placed && (
-        <Interactive onSelect={handleSelect}>
-          <mesh ref={reticleRef} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.05, 0.06, 32]} />
-            <meshBasicMaterial color="#00ffcc" />
-          </mesh>
-        </Interactive>
-      )}
-
-      {/* 2. THE STABLE ANCHOR GROUP */}
-      <group 
-        ref={anchorRef} 
-        onPointerMove={handlePointerMove}
-        onPointerUp={() => (lastTouchX.current = null)}
-        onPointerOut={() => (lastTouchX.current = null)}
-      >
-        {placed && (
-          <Suspense fallback={null}>
-            <ARModel rotationY={rotationY} />
-          </Suspense>
-        )}
-      </group>
-    </>
+    <group onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
+      <Suspense fallback={null}>
+        <Model modelRef={modelRef} />
+      </Suspense>
+    </group>
   );
 }
 
-/* ---------- MAIN VIEWPORT ---------- */
+/* ---------- MAIN ---------- */
 export default function ModelViewer() {
   return (
-    <div style={{ width: "100%", height: "100vh", background: "#000" }}>
-      <button 
-        style={arButtonStyle} 
-        onClick={() => xrStore.enterAR()}
-      >
-        START AR EXPERIENCE
-      </button>
+    <div style={{ width: "100%", height: "100%" }}>
+      {isAndroid && (
+        <button style={arButton} onClick={() => xrStore.enterAR()}>
+          OPEN AR CAMERA
+        </button>
+      )}
 
-      <Canvas>
+      <Canvas
+        camera={{ position: [0, 0, 5] }}
+        onCreated={({ gl }) => (gl.xr.enabled = true)}
+      >
+        <ambientLight intensity={1} />
+
         <XR store={xrStore}>
-          <ARScene />
+          {isAndroid ? (
+            <ARScene />
+          ) : (
+            <Suspense fallback={null}>
+              <Model />
+              <OrbitControls />
+            </Suspense>
+          )}
         </XR>
       </Canvas>
     </div>
   );
 }
 
-const arButtonStyle = {
-  position: "absolute", bottom: "30px", left: "50%",
-  transform: "translateX(-50%)", zIndex: 100,
-  padding: "15px 30px", background: "#00ffcc",
-  border: "none", borderRadius: "50px", fontWeight: "bold",
-  cursor: "pointer"
+const arButton = {
+  position: "absolute",
+  bottom: "24px",
+  left: "50%",
+  transform: "translateX(-50%)",
+  zIndex: 10,
+  padding: "14px 30px",
+  background: "#00ffcc",
+  border: "none",
+  borderRadius: "32px",
+  fontWeight: "bold",
 };
