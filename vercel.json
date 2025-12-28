@@ -1,23 +1,16 @@
 {
   "headers": [
     {
-      "source": "/models/:path*",
+      "source": "/models/(.*)",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "model/vnd.usdz+zip"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
+        { "key": "Content-Type", "value": "model/vnd.usdz+zip" },
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     }
   ],
   "rewrites": [
-    {
-      "source": "/((?!models/).*)",
-      "destination": "/index.html"
-    }
+    { "source": "/autoar", "destination": "/index.html" },
+    { "source": "/arview", "destination": "/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
