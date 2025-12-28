@@ -4,7 +4,10 @@ import { OrbitControls, useGLTF } from "@react-three/drei";
 import { XR, createXRStore, useXR } from "@react-three/xr";
 import * as THREE from "three";
 
+/* ---------- XR STORE ---------- */
 const xrStore = createXRStore();
+
+/* ---------- DEVICE CHECK ---------- */
 const isAndroid = /Android/i.test(navigator.userAgent);
 
 /* ---------- MODEL ---------- */
@@ -20,13 +23,13 @@ function ARScene() {
 
   const modelRef = useRef();
   const hitTestSource = useRef(null);
-  const refSpace = useRef(null);
+  const referenceSpace = useRef(null);
   const [placed, setPlaced] = useState(false);
 
   const lastDistance = useRef(null);
   const lastAngle = useRef(null);
 
-  /* ---- Setup native WebXR hit test ---- */
+  /* ----- Setup native WebXR hit test ----- */
   useEffect(() => {
     if (!session) return;
 
@@ -37,7 +40,7 @@ function ARScene() {
     });
 
     session.requestReferenceSpace("local").then((space) => {
-      refSpace.current = space;
+      referenceSpace.current = space;
     });
 
     return () => {
@@ -46,13 +49,13 @@ function ARScene() {
     };
   }, [session]);
 
-  /* ---- Update placement preview ---- */
+  /* ----- Update model position before placement ----- */
   useFrame((_, frame) => {
     if (!frame || placed || !hitTestSource.current) return;
 
     const hits = frame.getHitTestResults(hitTestSource.current);
     if (hits.length > 0 && modelRef.current) {
-      const pose = hits[0].getPose(refSpace.current);
+      const pose = hits[0].getPose(referenceSpace.current);
       modelRef.current.position.set(
         pose.transform.position.x,
         pose.transform.position.y,
@@ -61,28 +64,30 @@ function ARScene() {
     }
   });
 
-  /* ---- Tap to place ---- */
+  /* ----- Tap to place model ----- */
   useEffect(() => {
     if (!gl || placed) return;
+
     const place = () => setPlaced(true);
     gl.domElement.addEventListener("click", place);
+
     return () => gl.domElement.removeEventListener("click", place);
   }, [gl, placed]);
 
-  /* ---- Pinch zoom + rotate ---- */
+  /* ----- Pinch zoom + rotate ----- */
   const onTouchMove = (e) => {
     if (!placed || e.touches.length !== 2) return;
 
     const dx = e.touches[0].pageX - e.touches[1].pageX;
     const dy = e.touches[0].pageY - e.touches[1].pageY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const distance = Math.sqrt(dx * dx + dy * dy);
 
     if (lastDistance.current) {
-      const scale = dist / lastDistance.current;
+      const scale = distance / lastDistance.current;
       modelRef.current.scale.multiplyScalar(scale);
       modelRef.current.scale.clampScalar(0.25, 2);
     }
-    lastDistance.current = dist;
+    lastDistance.current = distance;
 
     const angle = Math.atan2(dy, dx);
     if (lastAngle.current !== null) {
@@ -105,10 +110,11 @@ function ARScene() {
   );
 }
 
-/* ---------- MAIN ---------- */
+/* ---------- MAIN VIEWER ---------- */
 export default function ModelViewer() {
   return (
-    <div style={{ width: "100%", height: "100%" }}>
+    <div style={{ width: "100%", height: "100vh", position: "relative" }}>
+      {/* AR BUTTON – ANDROID ONLY */}
       {isAndroid && (
         <button style={arButton} onClick={() => xrStore.enterAR()}>
           OPEN AR CAMERA
@@ -116,7 +122,7 @@ export default function ModelViewer() {
       )}
 
       <Canvas
-        camera={{ position: [0, 0, 5] }}
+        camera={{ position: [0, 0, 5], fov: 45 }}
         onCreated={({ gl }) => (gl.xr.enabled = true)}
       >
         <ambientLight intensity={1} />
@@ -136,6 +142,7 @@ export default function ModelViewer() {
   );
 }
 
+/* ---------- BUTTON STYLE ---------- */
 const arButton = {
   position: "absolute",
   bottom: "24px",
@@ -144,7 +151,10 @@ const arButton = {
   zIndex: 10,
   padding: "14px 30px",
   background: "#00ffcc",
+  color: "#000",
   border: "none",
   borderRadius: "32px",
   fontWeight: "bold",
+  fontSize: "14px",
+  cursor: "pointer",
 };
