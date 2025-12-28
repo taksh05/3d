@@ -6,16 +6,12 @@ export default function ModelViewer() {
   useEffect(() => {
     if (customElements.get("model-viewer")) {
       setIsLibraryLoaded(true);
-      return;
     }
-    import("@google/model-viewer").then(() => setIsLibraryLoaded(true));
   }, []);
 
-  // Use absolute URLs for Android Scene Viewer to ensure it finds the file
+  // Stable Android Intent for 360° Interaction
   const glbUrl = "https://3d-nine-bay.vercel.app/models/model.glb";
-  
-  // This is the "Magic Link" for Android that bypasses the green blink bug
-  const androidArIntent = `intent://arvr.google.com/scene-viewer/1.0?file=${glbUrl}&mode=ar_only#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=https://developers.google.com/ar;end;`;
+  const androidArIntent = `intent://arvr.google.com/scene-viewer/1.0?file=${glbUrl}&mode=ar_only&resizable=true#Intent;scheme=https;package=com.google.android.googlequicksearchbox;action=android.intent.action.VIEW;S.browser_fallback_url=https://developers.google.com/ar;end;`;
 
   if (!isLibraryLoaded) return null;
 
@@ -25,38 +21,36 @@ export default function ModelViewer() {
         src="/models/model.glb"
         ios-src="/models/model.usdz"
         
-        /* FIX THE ZOOM: auto distance frames the drone perfectly */
+        /* WEB VIEW: Frames the drone automatically */
         camera-orbit="0deg 90deg auto" 
         camera-controls
         enable-pan
         
-        /* LOCK WEB VIEW: Horizontal only */
+        /* LOCK WEB ROTATION (Desktop Only) */
         min-polar-angle="90deg"
         max-polar-angle="90deg"
 
-        /* AR CONFIG: iOS will use this natively */
+        /* AR CONFIG: Enable all interactions */
         ar
         ar-modes="quick-look webxr" 
         ar-placement="floor"
-        ar-scale="auto" 
+        ar-scale="auto"  // 'auto' is required for 360 movement & scaling
         
-        /* VISUALS */
+        /* VISUAL QUALITY */
         shadow-intensity="2"
         environment-image="neutral"
         exposure="1.2"
-        loading="eager"
         
         style={viewerStyle}
       >
-        {/* CUSTOM AR BUTTONS */}
         <div slot="ar-button" style={buttonGroupStyle}>
-           {/* Android-specific stable trigger */}
+           {/* Android: Native Scene Viewer with 360 movement enabled */}
            <a href={androidArIntent} style={androidBtnStyle}>
-             View in AR (Android)
+             Launch AR (Android)
            </a>
-           {/* Default trigger for iOS */}
+           {/* iOS: Native Quick Look trigger */}
            <button style={iosBtnStyle}>
-             View in AR (iPhone)
+             Launch AR (iPhone)
            </button>
         </div>
       </model-viewer>
@@ -79,7 +73,7 @@ const buttonGroupStyle = {
 
 const baseBtn = {
   padding: "12px 20px", borderRadius: "30px", border: "none", fontWeight: "bold",
-  fontSize: "14px", cursor: "pointer", textDecoration: "none", display: "inline-block"
+  fontSize: "14px", cursor: "pointer", textDecoration: "none"
 };
 
 const androidBtnStyle = { ...baseBtn, backgroundColor: "#00ffcc", color: "#000" };
