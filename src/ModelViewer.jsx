@@ -1,58 +1,47 @@
 import React, { useState, useEffect } from "react";
 
-export default function CargoDroneViewer() {
+export default function ModelViewer() {
   const [isMobile, setIsMobile] = useState(false);
 
+  // Check screen size to toggle AR button visibility
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkMobile();
+    checkMobile(); // Initial check
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   return (
     <div style={page}>
+      {/* HEADER UI */}
       <div style={header}>
-        <h1 style={title}>Cargo Drone Explorer</h1>
-        <p style={subtitle}>360° Inspection & AR Space</p>
+        <h1 style={{ margin: "0 0 8px 0" }}>Interactive 3D Experience</h1>
+        <p style={{ margin: 0, opacity: 0.7 }}>Experience the Ride in AR</p>
       </div>
 
+      {/* MODEL VIEWER */}
       <model-viewer
         src="/models/model.glb"
+        // REMOVED ios-src: model-viewer will now auto-generate USDZ for iOS
         ar
-        /* 1. Android FIX: Move scene-viewer to the front for one-finger movement */
-        /* 2. iOS FIX: Remove webxr to prevent experimental crashes on iPhone */
-        ar-modes="scene-viewer quick-look"
-        ar-placement="floor"
+        ar-modes="webxr scene-viewer quick-look"
         camera-controls
-        touch-action="none"
-
-        /* 3. PERFORMANCE FIX: loading lazy prevents blocking the UI */
-        loading="lazy"
-        powerPreference="high-performance" // Prioritizes GPU resources
-
-        /* ---------- ZOOM LIMITS ---------- */
-        min-camera-orbit="auto auto 50%" 
-        max-camera-orbit="auto auto 200%"
-        
-        /* ---------- DARKNESS SETTINGS ---------- */
-        /* Darker exposure for Desktop (0.35) vs Mobile (0.8) */
-        exposure={isMobile ? "0.8" : "0.35"} 
-        environment-intensity="0.3" // Prevents the model from looking "blown out"
-        environment-image="neutral"
-        
-        /* ---------- REALISM ---------- */
-        shadow-intensity="1.5"
-        shadow-softness="0.5"
-
-        auto-rotate
-        auto-rotate-delay="1000"
+        touch-action="pan-y"
         interaction-prompt="none"
+        
+        /* ---------- APPEARANCE ---------- */
+        auto-rotate
+        shadow-intensity="1.5"
+        shadow-softness="1"
+        environment-image="neutral"
+        exposure="1"
+        
         style={viewer}
       >
+        {/* Only show the button if on a mobile device */}
         {isMobile && (
           <button slot="ar-button" style={arButton}>
-            📦 DEPLOY & MOVE IN AR
+            🏍️ VIEW IN YOUR SPACE
           </button>
         )}
       </model-viewer>
@@ -61,47 +50,40 @@ export default function CargoDroneViewer() {
 }
 
 /* ---------- STYLES ---------- */
+
 const page = {
   width: "100%",
   height: "100vh",
-  background: "#0a0a0a",
+  background: "#000",
   display: "flex",
   flexDirection: "column",
-  overflow: "hidden",
-  position: "relative",
 };
 
 const header = {
   textAlign: "center",
-  color: "#fff",
-  padding: "20px",
+  color: "white",
+  padding: "30px 16px",
   zIndex: 10,
 };
 
-const title = { fontSize: "20px", margin: "0", letterSpacing: "1px" };
-const subtitle = { fontSize: "12px", color: "#666", letterSpacing: "2px" };
-
 const viewer = {
   width: "100%",
-  flex: "1",
-  background: "transparent",
+  flex: 1, // Fills remaining space
+  background: "radial-gradient(circle, #2a2a2a 0%, #000 80%)",
 };
 
 const arButton = {
   position: "absolute",
-  /* Moved to 90px to clear mobile browser bars and prevent cutting */
-  bottom: "90px", 
+  bottom: "40px",
   left: "50%",
   transform: "translateX(-50%)",
   padding: "16px 32px",
-  background: "#007bff",
-  color: "white",
-  borderRadius: "8px",
-  border: "none",
+  background: "#e31837", // Royal Enfield Signature Red
+  color: "#fff",
+  borderRadius: "50px",
   fontWeight: "bold",
-  fontSize: "12px",
-  boxShadow: "0 10px 20px rgba(0, 102, 255, 0.3)",
-  zIndex: 999,
-  whiteSpace: "nowrap",
-  cursor: "pointer",
+  border: "none",
+  fontSize: "14px",
+  letterSpacing: "1px",
+  boxShadow: "0 10px 20px rgba(227, 24, 55, 0.4)",
 };
