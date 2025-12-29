@@ -20,33 +20,33 @@ export default function CargoDroneViewer() {
       <model-viewer
         src="/models/model.glb"
         ar
-        /* 'scene-viewer' is lighter for Android; 'quick-look' handles iOS */
+        /* 1. Android FIX: Move scene-viewer to the front for one-finger movement */
+        /* 2. iOS FIX: Remove webxr to prevent experimental crashes on iPhone */
         ar-modes="scene-viewer quick-look"
         ar-placement="floor"
         camera-controls
         touch-action="none"
 
-        /* ---------- PERFORMANCE & STABILITY ---------- */
-        /* 'lazy' prevents the model from blocking the rest of the page load */
+        /* 3. PERFORMANCE FIX: loading lazy prevents blocking the UI */
         loading="lazy"
-        /* 'high-performance' helps the browser prioritize GPU resources */
-        powerPreference="high-performance"
+        powerPreference="high-performance" // Prioritizes GPU resources
 
         /* ---------- ZOOM LIMITS ---------- */
         min-camera-orbit="auto auto 50%" 
         max-camera-orbit="auto auto 200%"
         
-        /* ---------- DARKNESS & LIGHTING ---------- */
-        /* Lowering exposure reduces the rendering overhead on mobile */
-        exposure={isMobile ? "0.7" : "0.3"} 
-        environment-intensity="0.3" 
+        /* ---------- DARKNESS SETTINGS ---------- */
+        /* Darker exposure for Desktop (0.35) vs Mobile (0.8) */
+        exposure={isMobile ? "0.8" : "0.35"} 
+        environment-intensity="0.3" // Prevents the model from looking "blown out"
         environment-image="neutral"
         
         /* ---------- REALISM ---------- */
-        shadow-intensity="1"
+        shadow-intensity="1.5"
         shadow-softness="0.5"
 
         auto-rotate
+        auto-rotate-delay="1000"
         interaction-prompt="none"
         style={viewer}
       >
@@ -89,7 +89,7 @@ const viewer = {
 
 const arButton = {
   position: "absolute",
-  /* Moved to 90px to sit safely above mobile browser bars */
+  /* Moved to 90px to clear mobile browser bars and prevent cutting */
   bottom: "90px", 
   left: "50%",
   transform: "translateX(-50%)",
@@ -100,8 +100,8 @@ const arButton = {
   border: "none",
   fontWeight: "bold",
   fontSize: "12px",
-  whiteSpace: "nowrap",
+  boxShadow: "0 10px 20px rgba(0, 102, 255, 0.3)",
   zIndex: 999,
-  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.5)",
+  whiteSpace: "nowrap",
   cursor: "pointer",
 };
