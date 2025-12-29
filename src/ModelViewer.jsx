@@ -89,7 +89,7 @@ const viewer = {
 
 const arButton = {
   position: "absolute",
-  bottom: "40px",
+  bottom: "90px",
   left: "50%",
   transform: "translateX(-50%)",
   padding: "16px 32px",
@@ -100,4 +100,6 @@ const arButton = {
   fontWeight: "bold",
   fontSize: "12px",
   boxShadow: "0 10px 20px rgba(0, 123, 255, 0.3)",
+  zIndex: 999,
+  whiteSpace: "nowrap",
 };
