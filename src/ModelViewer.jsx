@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 
-export default function DroneViewer() {
+export default function CargoDroneViewer() {
   const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile to show/hide the AR button
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     checkMobile();
@@ -13,40 +12,44 @@ export default function DroneViewer() {
 
   return (
     <div style={page}>
-      {/* HEADER */}
       <div style={header}>
-        <h1 style={{ margin: "0", fontSize: "20px" }}>Cargo Drone Explorer</h1>
-        <p style={{ margin: "5px 0 0", opacity: 0.6, fontSize: "14px" }}>360° Inspection & AR</p>
+        <h1 style={title}>Cargo Drone Explorer</h1>
+        <p style={subtitle}>360° Inspection & AR Space</p>
       </div>
 
-      {/* 3D VIEWER */}
       <model-viewer
         src="/models/model.glb"
         ar
-        ar-modes="webxr scene-viewer quick-look" // 'quick-look' triggers auto-usdz for iOS
+        ar-modes="webxr scene-viewer quick-look"
+        ar-placement="floor"
         camera-controls
-        touch-action="pan-y"
+        touch-action="none"
+
+        /* ---------- ZOOM & SCALE LIMITS ---------- */
+        /* min-camera-orbit: How close you can zoom (e.g., "auto 0m") */
+        /* max-camera-orbit: How far you can zoom out (e.g., "auto 10m") */
+        min-camera-orbit="auto auto 50%" 
+        max-camera-orbit="auto auto 200%"
         
-        /* --- STABILITY TUNING FOR IOS --- */
-        interpolation-decay="200"
-        powerPreference="high-performance" // Hints the browser to use the GPU efficiently
+        /* ---------- DARKNESS SETTINGS ---------- */
+        exposure={isMobile ? "0.8" : "0.35"} 
+        environment-intensity="0.3" 
+        environment-image="neutral"
         
-        /* --- LIGHTING & SHADOWS (Reduced for Performance) --- */
-        shadow-intensity="0.4"   // Kept low to prevent GPU crashes
+        /* ---------- SHADOWS & REALISM ---------- */
+        shadow-intensity="1.5"
         shadow-softness="0.5"
-        exposure="0"             // Standard brightness
-        environment-image="neutral" // Basic reflections for metallic drone parts
-        
-        /* --- INTERACTION --- */
+
+        /* ---------- BEHAVIOR ---------- */
         auto-rotate
-        auto-rotate-delay="2000"
-        
+        auto-rotate-delay="1000"
+        interaction-prompt="none"
+        powerPreference="high-performance"
         style={viewer}
       >
-        {/* AR BUTTON: Only renders on Mobile/Tablet */}
         {isMobile && (
           <button slot="ar-button" style={arButton}>
-            📦 VIEW DRONE IN AR
+            📦 DEPLOY & ROTATE IN AR
           </button>
         )}
       </model-viewer>
@@ -54,12 +57,11 @@ export default function DroneViewer() {
   );
 }
 
-/* --- STYLES --- */
-
+/* ---------- STYLES ---------- */
 const page = {
   width: "100%",
   height: "100vh",
-  background: "#0a0a0a", // Dark tech theme
+  background: "#0a0a0a",
   display: "flex",
   flexDirection: "column",
   overflow: "hidden",
@@ -67,29 +69,31 @@ const page = {
 
 const header = {
   textAlign: "center",
-  color: "white",
-  padding: "20px 10px",
-  borderBottom: "1px solid #333",
+  color: "#fff",
+  padding: "20px",
+  zIndex: 10,
 };
+
+const title = { fontSize: "20px", margin: "0", letterSpacing: "1px" };
+const subtitle = { fontSize: "10px", color: "#666", letterSpacing: "2px" };
 
 const viewer = {
   width: "100%",
   flex: "1",
-  background: "radial-gradient(circle, #1a1a1a 0%, #000 100%)",
+  background: "transparent",
 };
 
 const arButton = {
   position: "absolute",
-  bottom: "30px",
+  bottom: "40px",
   left: "50%",
   transform: "translateX(-50%)",
-  padding: "15px 30px",
-  background: "#007bff", // Cargo Blue
+  padding: "16px 32px",
+  background: "#007bff",
   color: "white",
   borderRadius: "8px",
-  fontWeight: "bold",
   border: "none",
-  fontSize: "14px",
-  boxShadow: "0 4px 12px rgba(0, 123, 255, 0.4)",
-  cursor: "pointer",
+  fontWeight: "bold",
+  fontSize: "12px",
+  boxShadow: "0 10px 20px rgba(0, 123, 255, 0.3)",
 };
