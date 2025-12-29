@@ -20,9 +20,10 @@ export default function CargoDroneViewer() {
       <model-viewer
         src="/models/model.glb"
         ar
-        /* 'scene-viewer' first enables native one-finger dragging on Android */
+        /* 'scene-viewer' first allows native one-finger dragging on Android */
         ar-modes="scene-viewer webxr quick-look"
         ar-placement="floor"
+        
         camera-controls
         touch-action="none"
 
@@ -30,19 +31,20 @@ export default function CargoDroneViewer() {
         min-camera-orbit="auto auto 50%" 
         max-camera-orbit="auto auto 200%"
         
-        /* ---------- DARKNESS SETTINGS (Per Request) ---------- */
+        /* ---------- DARKNESS SETTINGS ---------- */
+        /* Darker exposure for Desktop (0.3) vs Mobile (0.8) */
         exposure={isMobile ? "0.8" : "0.3"} 
         environment-intensity="0.3" 
         environment-image="neutral"
         
-        /* ---------- SHADOWS ---------- */
+        /* ---------- REALISM ---------- */
         shadow-intensity="1.5"
         shadow-softness="0.5"
 
         auto-rotate
         auto-rotate-delay="1000"
         interaction-prompt="none"
-        powerPreference="high-performance"
+        powerPreference="high-performance" // Reduces iOS browser crashes
         style={viewer}
       >
         {isMobile && (
@@ -63,7 +65,7 @@ const page = {
   display: "flex",
   flexDirection: "column",
   overflow: "hidden",
-  position: "relative",
+  position: "relative", // Required for absolute positioning of the button
 };
 
 const header = {
@@ -74,7 +76,7 @@ const header = {
 };
 
 const title = { fontSize: "20px", margin: "0", letterSpacing: "1px" };
-const subtitle = { fontSize: "10px", color: "#666", letterSpacing: "2px" };
+const subtitle = { fontSize: "12px", color: "#666", letterSpacing: "2px" };
 
 const viewer = {
   width: "100%",
@@ -84,8 +86,8 @@ const viewer = {
 
 const arButton = {
   position: "absolute",
-  /* Moved up from 40px to 80px to prevent cutting on mobile browsers */
-  bottom: "80px", 
+  /* Moved up to 90px to clear the browser's bottom UI bar */
+  bottom: "90px", 
   left: "50%",
   transform: "translateX(-50%)",
   padding: "16px 32px",
@@ -95,9 +97,8 @@ const arButton = {
   border: "none",
   fontWeight: "bold",
   fontSize: "12px",
-  whiteSpace: "nowrap",
-  /* Ensures it stays above the 3D canvas */
-  zIndex: 999, 
+  whiteSpace: "nowrap", // Prevents text from wrapping
+  zIndex: 999, // Keeps button above the 3D viewer
   boxShadow: "0 10px 25px rgba(0, 0, 0, 0.5)",
   cursor: "pointer",
 };
