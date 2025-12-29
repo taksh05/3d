@@ -20,28 +20,22 @@ export default function CargoDroneViewer() {
       <model-viewer
         src="/models/model.glb"
         ar
-        /* 'webxr' is preferred for fixed placement where users walk around the model */
-        ar-modes="webxr scene-viewer quick-look"
+        /* 'scene-viewer' first enables native one-finger dragging on Android */
+        ar-modes="scene-viewer webxr quick-look"
         ar-placement="floor"
-        
-        /* Enables rotation and zoom in 3D view */
         camera-controls
         touch-action="none"
-
-        /* ---------- FIXED AR BEHAVIOR ---------- */
-        /* To make the model feel fixed, we allow users to rotate it 
-           manually in 3D view, but in AR, it anchors to the real world */
 
         /* ---------- ZOOM LIMITS ---------- */
         min-camera-orbit="auto auto 50%" 
         max-camera-orbit="auto auto 200%"
         
-        /* ---------- DARKNESS SETTINGS ---------- */
-        exposure={isMobile ? "0.8" : "0.35"} 
+        /* ---------- DARKNESS SETTINGS (Per Request) ---------- */
+        exposure={isMobile ? "0.8" : "0.3"} 
         environment-intensity="0.3" 
         environment-image="neutral"
         
-        /* ---------- REALISM ---------- */
+        /* ---------- SHADOWS ---------- */
         shadow-intensity="1.5"
         shadow-softness="0.5"
 
@@ -53,7 +47,7 @@ export default function CargoDroneViewer() {
       >
         {isMobile && (
           <button slot="ar-button" style={arButton}>
-            📦 DEPLOY & INSPECT IN AR
+            📦 DEPLOY & MOVE IN AR
           </button>
         )}
       </model-viewer>
@@ -69,6 +63,7 @@ const page = {
   display: "flex",
   flexDirection: "column",
   overflow: "hidden",
+  position: "relative",
 };
 
 const header = {
@@ -89,7 +84,8 @@ const viewer = {
 
 const arButton = {
   position: "absolute",
-  bottom: "40px",
+  /* Moved up from 40px to 80px to prevent cutting on mobile browsers */
+  bottom: "80px", 
   left: "50%",
   transform: "translateX(-50%)",
   padding: "16px 32px",
@@ -99,5 +95,9 @@ const arButton = {
   border: "none",
   fontWeight: "bold",
   fontSize: "12px",
-  boxShadow: "0 10px 20px rgba(0, 123, 255, 0.3)",
+  whiteSpace: "nowrap",
+  /* Ensures it stays above the 3D canvas */
+  zIndex: 999, 
+  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.5)",
+  cursor: "pointer",
 };
