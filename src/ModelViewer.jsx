@@ -20,14 +20,19 @@ export default function CargoDroneViewer() {
       <model-viewer
         src="/models/model.glb"
         ar
+        /* 'webxr' is preferred for fixed placement where users walk around the model */
         ar-modes="webxr scene-viewer quick-look"
         ar-placement="floor"
+        
+        /* Enables rotation and zoom in 3D view */
         camera-controls
         touch-action="none"
 
-        /* ---------- ZOOM & SCALE LIMITS ---------- */
-        /* min-camera-orbit: How close you can zoom (e.g., "auto 0m") */
-        /* max-camera-orbit: How far you can zoom out (e.g., "auto 10m") */
+        /* ---------- FIXED AR BEHAVIOR ---------- */
+        /* To make the model feel fixed, we allow users to rotate it 
+           manually in 3D view, but in AR, it anchors to the real world */
+
+        /* ---------- ZOOM LIMITS ---------- */
         min-camera-orbit="auto auto 50%" 
         max-camera-orbit="auto auto 200%"
         
@@ -36,11 +41,10 @@ export default function CargoDroneViewer() {
         environment-intensity="0.3" 
         environment-image="neutral"
         
-        /* ---------- SHADOWS & REALISM ---------- */
+        /* ---------- REALISM ---------- */
         shadow-intensity="1.5"
         shadow-softness="0.5"
 
-        /* ---------- BEHAVIOR ---------- */
         auto-rotate
         auto-rotate-delay="1000"
         interaction-prompt="none"
@@ -49,7 +53,7 @@ export default function CargoDroneViewer() {
       >
         {isMobile && (
           <button slot="ar-button" style={arButton}>
-            📦 DEPLOY & ROTATE IN AR
+            📦 DEPLOY & INSPECT IN AR
           </button>
         )}
       </model-viewer>
