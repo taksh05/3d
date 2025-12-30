@@ -1,14 +1,24 @@
-
 import React, { useState, useEffect } from "react";
 
 export default function CargoDroneViewer() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    // Load Model Viewer script dynamically
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js';
+    script.type = 'module';
+    document.head.appendChild(script);
+
+    // Check mobile
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     checkMobile();
     window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+
+    return () => {
+      document.head.removeChild(script);
+      window.removeEventListener("resize", checkMobile);
+    };
   }, []);
 
   return (
@@ -21,36 +31,29 @@ export default function CargoDroneViewer() {
       <model-viewer
         src="/models/model.glb"
         ar
-        /* 'webxr' is preferred for fixed placement where users walk around the model */
-        ar-modes="webxr scene-viewer quick-look"
+        ar-modes="webxr scene-viewer quick-look"  // Prioritize webxr for iOS inline AR
         ar-placement="floor"
         
-        /* Enables rotation and zoom in 3D view */
         camera-controls
-        touch-action="none"
-
-        /* ---------- FIXED AR BEHAVIOR ---------- */
-        /* To make the model feel fixed, we allow users to rotate it 
-           manually in 3D view, but in AR, it anchors to the real world */
-
-        /* ---------- ZOOM LIMITS ---------- */
+        // Removed touch-action="none" as it can interfere with gestures
+        
         min-camera-orbit="auto auto 50%" 
         max-camera-orbit="auto auto 200%"
         
-        /* ---------- DARKNESS SETTINGS ---------- */
         exposure={isMobile ? "0.8" : "0.35"} 
         environment-intensity="0.3" 
         environment-image="neutral"
         
-        /* ---------- REALISM ---------- */
         shadow-intensity="1.5"
         shadow-softness="0.5"
 
         auto-rotate
         auto-rotate-delay="1000"
-        interaction-prompt="none"
-        powerPreference="high-performance"
+        interaction-prompt="auto"  // Changed to auto to ensure AR prompt shows
+        // Removed powerPreference as it's not widely supported
+        
         style={viewer}
+        onError={(e) => console.error('Model Viewer Error:', e)}  // Add error logging
       >
         {isMobile && (
           <button slot="ar-button" style={arButton}>
