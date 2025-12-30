@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 
 export default function CargoDroneViewer() {
   const [isMobile, setIsMobile] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);  // Added for loading state
 
   useEffect(() => {
     // Load Model Viewer script dynamically
@@ -28,14 +29,22 @@ export default function CargoDroneViewer() {
         <p style={subtitle}>360° Inspection & AR Space</p>
       </div>
 
+      {isLoading && (
+        <div style={loadingSpinner}>
+          <div>Loading Drone Model...</div>
+          <div style={spinner}></div>
+        </div>
+      )}
+
       <model-viewer
         src="/models/model.glb"
+        preload  // Loads model in background for faster access
+        loading="eager"  // Forces immediate loading to speed up
         ar
-        ar-modes="webxr scene-viewer quick-look"  // Prioritize webxr for iOS inline AR
+        ar-modes="webxr scene-viewer quick-look"
         ar-placement="floor"
         
         camera-controls
-        // Removed touch-action="none" as it can interfere with gestures
         
         min-camera-orbit="auto auto 50%" 
         max-camera-orbit="auto auto 200%"
@@ -49,11 +58,12 @@ export default function CargoDroneViewer() {
 
         auto-rotate
         auto-rotate-delay="1000"
-        interaction-prompt="auto"  // Changed to auto to ensure AR prompt shows
-        // Removed powerPreference as it's not widely supported
+        interaction-prompt="auto"
         
         style={viewer}
-        onError={(e) => console.error('Model Viewer Error:', e)}  // Add error logging
+        onLoad={() => setIsLoading(false)}  // Hide spinner when loaded
+        onProgress={(e) => console.log('Loading progress:', e.detail.totalProgress)}  // Optional: log progress
+        onError={(e) => console.error('Model Viewer Error:', e)}  // Log errors
       >
         {isMobile && (
           <button slot="ar-button" style={arButton}>
@@ -107,3 +117,39 @@ const arButton = {
   zIndex: 999,
   whiteSpace: "nowrap",
 };
+
+const loadingSpinner = {
+  position: "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  color: "#fff",
+  textAlign: "center",
+  zIndex: 1000,
+};
+
+const spinner = {
+  width: "40px",
+  height: "40px",
+  border: "4px solid #666",
+  borderTop: "4px solid #007bff",
+  borderRadius: "50%",
+  animation: "spin 1s linear infinite",
+  margin: "10px auto",
+};
+
+// Add CSS for spinner animation (include in your global CSS or add to component)
+const globalStyles = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+
+// Inject global styles if needed (optional, or add to your CSS file)
+useEffect(() => {
+  const style = document.createElement('style');
+  style.textContent = globalStyles;
+  document.head.appendChild(style);
+  return () => document.head.removeChild(style);
+}, []);
