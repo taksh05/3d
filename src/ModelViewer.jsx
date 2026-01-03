@@ -7,26 +7,23 @@ export default function ModelViewer() {
       <model-viewer
         src="./models/model.glb"
         ios-src="./models/model.usdz"
-        alt="3D Drone Model"
+        alt="3D Model"
 
-        /* ---------- 360 VIEW (RESTORED) ---------- */
+        /* -------- 360 VIEW (UNCHANGED & SAFE) -------- */
         camera-controls
         auto-rotate
         rotation-per-second="10deg"
         auto-rotate-delay="0"
-
-        /* KEEP ORIGINAL CENTER BEHAVIOR */
         camera-orbit="0deg 75deg auto"
-        min-camera-orbit="auto auto auto"
         camera-target="auto"
 
-        /* ---------- AR (FIXED, NOT CHANGED) ---------- */
+        /* -------- iOS AR AUTO-ZOOM FIX -------- */
         ar
         ar-modes="quick-look webxr scene-viewer"
         ar-placement="floor"
-        ar-scale="fixed"
+        ar-scale="fixed"   /* 🔥 MOST IMPORTANT LINE */
 
-        /* ---------- VISUAL ---------- */
+        /* -------- VISUAL -------- */
         environment-image="neutral"
         exposure="1"
         shadow-intensity="0.8"
