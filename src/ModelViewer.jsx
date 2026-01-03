@@ -9,19 +9,19 @@ export default function ModelViewer() {
         ios-src="./models/model.usdz"
         alt="3D Model"
 
-        /* -------- 360 VIEW (UNCHANGED & SAFE) -------- */
+        /* -------- 360 VIEW (STABLE & WORKING) -------- */
         camera-controls
         auto-rotate
-        rotation-per-second="10deg"
         auto-rotate-delay="0"
+        rotation-per-second="10deg"
         camera-orbit="0deg 75deg auto"
         camera-target="auto"
 
-        /* -------- iOS AR AUTO-ZOOM FIX -------- */
+        /* -------- AR (iOS + Android) -------- */
         ar
         ar-modes="quick-look webxr scene-viewer"
         ar-placement="floor"
-        ar-scale="fixed"   /* 🔥 MOST IMPORTANT LINE */
+        ar-scale="auto"     /* ✅ ALLOWS ZOOM / SHRINK ON iOS */
 
         /* -------- VISUAL -------- */
         environment-image="neutral"
@@ -36,9 +36,18 @@ export default function ModelViewer() {
           touchAction: "pan-y"
         }}
       >
+        {/* AR Button */}
         <button slot="ar-button" style={arButtonStyle}>
           👋 View in Your Space
         </button>
+
+        {/* iOS / Android AR prompt */}
+        <div slot="ar-prompt">
+          <img
+            src="https://modelviewer.dev/shared-assets/icons/hand.png"
+            alt="Move phone"
+          />
+        </div>
       </model-viewer>
     </div>
   );
